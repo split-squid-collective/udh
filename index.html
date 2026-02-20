@@ -10,6 +10,7 @@
             --accent: #e67e22;
             --bg: #fdfaf6;
             --text: #2c3e50;
+            --theme-bg: #fff9f1;
         }
         body {
             font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
@@ -31,7 +32,6 @@
             text-align: center;
             border: 1px solid #eee;
         }
-        /* セクション制御 */
         .section { display: none; }
         .active { display: block; }
 
@@ -62,11 +62,26 @@
         .btn-next { background-color: var(--accent); color: white; font-size: 1.3rem; padding: 15px 50px; }
         .btn-end { background-color: transparent; color: #999; text-decoration: underline; font-size: 0.9rem; margin-top: 30px; }
 
-        .result-box { margin: 2.5rem 0; padding: 20px; border-top: 2px solid #f9f9f9; border-bottom: 2px solid #f9f9f9; }
+        .result-box { margin: 1.5rem 0; padding: 20px; border-top: 2px solid #f9f9f9; }
         .player-name { font-size: 1.1rem; opacity: 0.8; }
-        .target-age { font-size: 3.5rem; color: var(--accent); font-weight: bold; margin: 15px 0; }
+        .target-age { font-size: 3.5rem; color: var(--accent); font-weight: bold; margin: 10px 0; }
         .target-age span { font-size: 1.5rem; margin-left: 5px; color: var(--text); }
-        .percent-info { font-size: 0.85rem; color: #bbb; }
+        
+        /* トークテーマ表示エリア */
+        .theme-card {
+            background-color: var(--theme-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px dashed var(--accent);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #d35400;
+        }
+        .percent-info { font-size: 0.85rem; color: #bbb; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -97,6 +112,11 @@
             <div class="player-name">〈 <span id="display-name">---</span> 〉さんの番</div>
             <div class="target-age"><span id="display-age">??</span><span>歳</span></div>
             <div class="percent-info">現在の年齢の <span id="display-percent">?</span>% の頃</div>
+            
+            <div style="font-size: 0.9rem; color: #666;">お題：</div>
+            <div class="theme-card" id="display-theme">
+                ここにトークテーマが出ます
+            </div>
         </div>
         <button class="btn-next" onclick="nextTurn()">次の人へ</button>
         <br>
@@ -108,7 +128,27 @@
     let players = [];
     let currentIndex = 0;
 
-    // 画面切り替え
+    // トークテーマ50選
+    const themes = [
+        "当時、一番仲が良かった友達は？", "好きだった給食のメニューは？", "夢中になっていた遊びやゲームは？",
+        "当時の自分に1つだけアドバイスするなら？", "恥ずかしかった失敗談を教えて！", "頑張っていた習い事や部活は？",
+        "よく聴いていた音楽やアーティストは？", "宝物にしていたものは何？", "怖かった先生や近所の人の思い出",
+        "初めての旅行や遠足の思い出は？", "当時の流行語やファッションは？", "自分の中での「黒歴史」を1つ",
+        "よく通っていた場所（公園、店など）は？", "好きだったテレビ番組やアニメは？", "当時の将来の夢は何だった？",
+        "初めてのお小遣いで買ったものは？", "家族との忘れられないエピソード", "苦手だった食べ物と、その理由",
+        "クラスでの自分の立ち位置は？", "当時の自分に点数をつけるなら何点？", "バレンタインや誕生日の思い出",
+        "朝起きてから寝るまでのルーティンは？", "学校の休み時間に何をしていた？", "今でも覚えている「音」や「匂い」は？",
+        "当時、一番怖かったものは何？", "初めての「自慢できること」は何だった？", "夏休みの宿題はどう終わらせていた？",
+        "自分だけの「秘密の基地」や場所はあった？", "当時の自分に「今の自分」を見せたらどう思う？", "印象に残っているお弁当の中身は？",
+        "よく読んでいた本や漫画は？", "当時の特技や自慢話を聞かせて！", "何かを壊したり失くしたりした思い出",
+        "自分を動物に例えると何だった？", "一番影響を受けた人は誰？", "校則やルールで反発したことはある？",
+        "当時の「一番高い買い物」は何？", "冬休みの過ごし方はどんな感じだった？", "どんな性格だと思われていた？",
+        "当時の自分に足りなかったものは？", "初めて一人で何かをした思い出", "忘れられない景色や風景は？",
+        "誰にも言っていなかった当時の悩み", "今も繋がっている友達はいる？", "当時の自分にプレゼントをあげるなら？",
+        "その年齢に戻れるなら、何をする？", "当時一番笑った出来事は？", "ちょっとした反抗期のエピソード",
+        "自分だけのマイルールやこだわりは？", "その頃の自分を漢字一文字で表すと？"
+    ];
+
     function showSection(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -122,10 +162,7 @@
         const div = document.createElement('div');
         div.className = 'player-entry';
         const num = document.querySelectorAll('.player-entry').length + 1;
-        div.innerHTML = `
-            <input type="text" placeholder="名前" class="p-name" value="プレイヤー${num}">
-            <input type="number" placeholder="年齢" class="p-age">
-        `;
+        div.innerHTML = `<input type="text" placeholder="名前" class="p-name" value="プレイヤー${num}"><input type="number" placeholder="年齢" class="p-age">`;
         document.getElementById('player-inputs').appendChild(div);
     }
 
@@ -133,21 +170,15 @@
         const names = document.querySelectorAll('.p-name');
         const ages = document.querySelectorAll('.p-age');
         players = [];
-
         for (let i = 0; i < names.length; i++) {
             if (names[i].value && ages[i].value) {
-                players.push({
-                    name: names[i].value,
-                    age: parseInt(ages[i].value)
-                });
+                players.push({ name: names[i].value, age: parseInt(ages[i].value) });
             }
         }
-
         if (players.length === 0) {
             alert("名前と年齢を入力してください");
             return;
         }
-
         currentIndex = 0;
         showSection('game-screen');
         updateTurn();
@@ -158,24 +189,22 @@
         let targetAge = 0;
         let randomPercent = 0;
 
-        // ②〜③ 確率計算 (1~100%)
-        // 1~3歳を除外するためのループ
+        // 1~3歳除外ロジック
         let attempts = 0;
         while (attempts < 100) {
             randomPercent = Math.floor(Math.random() * 100) + 1;
             targetAge = Math.round(currentPlayer.age * (randomPercent / 100));
-            
-            // 現在の年齢が4歳以上の場合、結果が4歳以上になるまで回す
-            // (本人が3歳以下の場合は、そのまま出すしかないため除外)
-            if (currentPlayer.age <= 3 || targetAge >= 4) {
-                break;
-            }
+            if (currentPlayer.age <= 3 || targetAge >= 4) break;
             attempts++;
         }
+
+        // ランダムトークテーマの選択
+        const randomTheme = themes[Math.floor(Math.random() * themes.length)];
 
         document.getElementById('display-name').innerText = currentPlayer.name;
         document.getElementById('display-age').innerText = targetAge;
         document.getElementById('display-percent').innerText = randomPercent;
+        document.getElementById('display-theme').innerText = randomTheme;
     }
 
     function nextTurn() {
@@ -185,7 +214,6 @@
 
     function endGame() {
         alert("お疲れさまでした！");
-        // フォームをリセット（必要なら）
         showSection('start-screen');
     }
 </script>
