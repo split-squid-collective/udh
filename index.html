@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ときには昔の話を</title>
+    <style>
+        :root {
+            --primary: #5d6d7e;
+            --accent: #e67e22;
+            --bg: #fdfaf6;
+            --text: #2c3e50;
+        }
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            border: 1px solid #eee;
+        }
+        /* セクション制御 */
+        .section { display: none; }
+        .active { display: block; }
+
+        h1 { font-size: 1.8rem; letter-spacing: 0.1rem; margin-bottom: 2rem; color: var(--primary); }
+        
+        .player-entry { margin-bottom: 12px; display: flex; gap: 5px; justify-content: center; }
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .p-name { width: 60%; }
+        .p-age { width: 25%; }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            margin: 10px 5px;
+        }
+        button:active { transform: scale(0.95); }
+        
+        .btn-main { background-color: var(--primary); color: white; width: 100%; font-size: 1.1rem; }
+        .btn-add { background-color: #f0f0f0; color: #666; font-size: 0.9rem; }
+        .btn-next { background-color: var(--accent); color: white; font-size: 1.3rem; padding: 15px 50px; }
+        .btn-end { background-color: transparent; color: #999; text-decoration: underline; font-size: 0.9rem; margin-top: 30px; }
+
+        .result-box { margin: 2.5rem 0; padding: 20px; border-top: 2px solid #f9f9f9; border-bottom: 2px solid #f9f9f9; }
+        .player-name { font-size: 1.1rem; opacity: 0.8; }
+        .target-age { font-size: 3.5rem; color: var(--accent); font-weight: bold; margin: 15px 0; }
+        .target-age span { font-size: 1.5rem; margin-left: 5px; color: var(--text); }
+        .percent-info { font-size: 0.85rem; color: #bbb; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="start-screen" class="section active">
+        <h1 style="margin-top: 40px;">ときには昔の話を</h1>
+        <p style="color: #888; margin-bottom: 40px;">思い出を巡る時間</p>
+        <button class="btn-main" onclick="showSetup()">はじめる</button>
+    </div>
+
+    <div id="setup-screen" class="section">
+        <h1>参加者の年齢</h1>
+        <div id="player-inputs">
+            <div class="player-entry">
+                <input type="text" placeholder="名前" class="p-name" value="プレイヤー1">
+                <input type="number" placeholder="年齢" class="p-age" value="25">
+            </div>
+        </div>
+        <button class="btn-add" onclick="addInput()">＋ 参加者を追加</button>
+        <div style="margin-top: 30px;">
+            <button class="btn-main" onclick="startGame()">ゲーム開始</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="section">
+        <div class="result-box">
+            <div class="player-name">〈 <span id="display-name">---</span> 〉さんの番</div>
+            <div class="target-age"><span id="display-age">??</span><span>歳</span></div>
+            <div class="percent-info">現在の年齢の <span id="display-percent">?</span>% の頃</div>
+        </div>
+        <button class="btn-next" onclick="nextTurn()">次の人へ</button>
+        <br>
+        <button class="btn-end" onclick="endGame()">ゲームを終了する</button>
+    </div>
+</div>
+
+<script>
+    let players = [];
+    let currentIndex = 0;
+
+    // 画面切り替え
+    function showSection(id) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function showSetup() {
+        showSection('setup-screen');
+    }
+
+    function addInput() {
+        const div = document.createElement('div');
+        div.className = 'player-entry';
+        const num = document.querySelectorAll('.player-entry').length + 1;
+        div.innerHTML = `
+            <input type="text" placeholder="名前" class="p-name" value="プレイヤー${num}">
+            <input type="number" placeholder="年齢" class="p-age">
+        `;
+        document.getElementById('player-inputs').appendChild(div);
+    }
+
+    function startGame() {
+        const names = document.querySelectorAll('.p-name');
+        const ages = document.querySelectorAll('.p-age');
+        players = [];
+
+        for (let i = 0; i < names.length; i++) {
+            if (names[i].value && ages[i].value) {
+                players.push({
+                    name: names[i].value,
+                    age: parseInt(ages[i].value)
+                });
+            }
+        }
+
+        if (players.length === 0) {
+            alert("名前と年齢を入力してください");
+            return;
+        }
+
+        currentIndex = 0;
+        showSection('game-screen');
+        updateTurn();
+    }
+
+    function updateTurn() {
+        const currentPlayer = players[currentIndex];
+        let targetAge = 0;
+        let randomPercent = 0;
+
+        // ②〜③ 確率計算 (1~100%)
+        // 1~3歳を除外するためのループ
+        let attempts = 0;
+        while (attempts < 100) {
+            randomPercent = Math.floor(Math.random() * 100) + 1;
+            targetAge = Math.round(currentPlayer.age * (randomPercent / 100));
+            
+            // 現在の年齢が4歳以上の場合、結果が4歳以上になるまで回す
+            // (本人が3歳以下の場合は、そのまま出すしかないため除外)
+            if (currentPlayer.age <= 3 || targetAge >= 4) {
+                break;
+            }
+            attempts++;
+        }
+
+        document.getElementById('display-name').innerText = currentPlayer.name;
+        document.getElementById('display-age').innerText = targetAge;
+        document.getElementById('display-percent').innerText = randomPercent;
+    }
+
+    function nextTurn() {
+        currentIndex = (currentIndex + 1) % players.length;
+        updateTurn();
+    }
+
+    function endGame() {
+        alert("お疲れさまでした！");
+        // フォームをリセット（必要なら）
+        showSection('start-screen');
+    }
+</script>
+
+</body>
+</html>
